@@ -22,32 +22,67 @@ SUPPORTED_MODELS =  {   'ROG CROSSHAIR VIII DARK HERO':
                             'name': 'MOTHERBOARD_TEMP',
                             'offset': 0x3c,
                             'type': int(),
-                            'suffix': '°C'
+                            'suffix': '°C',
+                            'page': 0,
+                            'size': 1,
                         },
                         {
                             'name': 'CHIPSET_TEMP',
                             'offset': 0x3a,
                             'type': int(),
-                            'suffix': '°C'
+                            'suffix': '°C',
+                            'page': 0,
+                            'size': 1
                         },
                         {
                             'name': 'CPU_TEMP',
                             'offset': 0x3b,
                             'type': int(),
-                            'suffix': '°C'
+                            'suffix': '°C',
+                            'page': 0,
+                            'size': 1
                         },
                         {
                             'name': 'T_SENSOR',
                             'offset': 0x3d,
                             'type': int(),
-                            'suffix': '°C'
+                            'suffix': '°C',
+                            'page': 0,
+                            'size': 1
                         },
                         {
                             'name': 'WATER_FLOW',
                             'offset': 0xbd,
                             'type': int(),
-                            'suffix': 'RPM'
-                        }]
+                            'suffix': 'RPM',
+                            'page': 0,
+                            'size': 1
+                        },
+                        {
+                            'name': 'WATER_IN',
+                            'offset': 0,
+                            'type': int(),
+                            'suffix': '°C',
+                            'page': 1,
+                            'size': 1
+                        },
+                        {
+                            'name': 'WATER_OUT',
+                            'offset': 1,
+                            'type': int(),
+                            'suffix': '°C',
+                            'page': 1,
+                            'size': 1
+                        },
+                        {
+                            'name': 'VCore',
+                            'offset': 0xa2,
+                            'type': int(),
+                            'suffix': 'mV',
+                            'page': 0,
+                            'size': 2
+                        }
+                        ]
                     }
 
 
@@ -62,12 +97,32 @@ class Reader:
             self.update()
 
     def update(self):
+        current_page = None
         with open(EC_PATH, 'rb') as fh:
             data = fh.read()
 
         for s in SUPPORTED_MODELS['ROG CROSSHAIR VIII DARK HERO']:
-            v = data[s['offset']]
+            page = s['page']
+            size = s['size']
+            if page != current_page:
+                with open(EC_PATH, 'wb') as fh:
+                    fh.seek(0xff)
+                    fh.write(bytes([page]))
+                    current_page = page
+
+                with open(EC_PATH, 'rb') as fh:
+                    data = fh.read()
+            if size == 1:
+                v = data[s['offset']]
+            elif size == 2:
+                v = (data[s['offset']] * 256) + data[s['offset'] + 1]
+
             self.data[s['name']] = '{} {}'.format(v, s['suffix'])
+
+        # Reset page back to zero when we're done
+        with open(EC_PATH, 'wb') as fh:
+            fh.seek(0xff)
+            fh.write(bytes([0]))
 
     def run(self):
         while True:
@@ -89,7 +144,7 @@ class Server:
         c.close()
 
     def run(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(('127.0.0.1', self.port))
 
         s.listen(5)

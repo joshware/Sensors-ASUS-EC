@@ -3,7 +3,7 @@ This script provides sensor data for the ASUS Dark Hero through the ec_sys debug
 
 ## Requirements
 - Python 3 with the `daemonize` module.
-- The kernel module `ec_sys` must be loaded. 
+- The kernel module `ec_sys` must be loaded with write_support=1
 - Root privileges to read the data. Script can be run as a daemon which then listens on a local port. From there a regular user can run and data will be read from the daemon.
 
 ## Usage
@@ -25,6 +25,9 @@ CHIPSET_TEMP        : 54 °C
 CPU_TEMP            : 34 °C
 T_SENSOR            : 27 °C
 WATER_FLOW          : 162 RPM
+WATER_IN            : 216 °C
+WATER_OUT           : 24 °C
+VCore               : 951 mV
 
 $ nc 127.0.0.1 2787
 {"MOTHERBOARD_TEMP": "35 \u00b0C", "CHIPSET_TEMP": "54 \u00b0C", "CPU_TEMP": "34 \u00b0C", "T_SENSOR": "27 \u00b0C", "WATER_FLOW": "164 RPM"}
